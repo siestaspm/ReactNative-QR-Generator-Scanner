@@ -7,6 +7,8 @@ import {RNCamera} from 'react-native-camera';
 import {API_BASE_URL} from '../utils/apiConfig';
 import * as functions from '../utils/functions';
 import axios from 'axios';
+import Toast from 'react-native-toast-message';
+
 function QRData() {
   const [qrValue, setQrValue] = useState({});
 
@@ -29,8 +31,13 @@ function QRData() {
         email: qrValue.email,
       };
       const response = await axios.post(endpoint, inputData);
-      if (response.data === '') { 
-        return;
+      if (response.data === 'Unable to find attendee') { 
+      Toast.show({
+    type: 'error', // success | error | info
+    text1: 'Unable to find attendee!'
+  });
+      } else if (response.data === 'Success'){ 
+        navigation.navigate('QR Scanner')
       }
     } catch (er) {
       console.error(er);
@@ -38,17 +45,16 @@ function QRData() {
   };
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        onPress={() => console.log(JSON.stringify(qrValue, null, 2))}>
-        <Text>Hello</Text>
-      </TouchableOpacity>
       <Text style={styles.input}>{qrValue.attendee_code}</Text>
       <Text style={styles.input}>{qrValue.attendee_type}</Text>
       <Text style={styles.input}>{qrValue.email}</Text>
       <Text style={styles.input}>{qrValue.first_name}</Text>
       <Text style={styles.input}>{qrValue.gender}</Text>
       <Text style={styles.input}>{qrValue.last_name}</Text>
-      <Text style={styles.input}>{qrValue.mobile_no}</Text>
+      {qrValue.mobile_no && ( 
+<Text style={styles.input}>{qrValue.mobile_no}</Text>
+      )}
+      
       <Text style={styles.input}>{qrValue.nickname}</Text>
       <Text style={styles.input}>{qrValue.registered_date}</Text>
       <Text style={styles.input}>{qrValue.type}</Text>

@@ -15,7 +15,10 @@ const Register = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState(false);
+
+
   const pressRegister = async () => {
+    console.log('started')
     try {
       if (password !== confirmPassword) {
         setStatus(true);
@@ -27,9 +30,18 @@ const Register = ({navigation}) => {
         username: username,
         password: password,
       };
+      console.log(endpoint)
+      console.log(inputData)
 
       const response = await axios.post(endpoint, inputData);
-      console.log('this is the response', response.data);
+      if(response.data === 'Success') { 
+        console.log('Hello')
+        navigation.navigate('Login')
+      } else if ( response.data === 'Username already exists') { 
+
+      } else { 
+
+      }
     } catch (er) {
       console.log(er);
     }
@@ -69,7 +81,6 @@ const Register = ({navigation}) => {
 
         <TouchableOpacity
           style={styles.button}
-          disabled={status}
           onPress={pressRegister}>
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>

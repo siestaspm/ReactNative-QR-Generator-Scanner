@@ -6,6 +6,7 @@ import QRscanner from './src/screens/QRscanner';
 import Login from './src/screens/Login';
 import Register from './src/screens/Register';
 import QRData from './src/screens/QRDATA';
+import Toast from 'react-native-toast-message';
 const Stack = createNativeStackNavigator();
 
 function App() {
@@ -20,6 +21,11 @@ function App() {
         <Stack.Screen name="QR Scanner" component={QRscanner} />
         <Stack.Screen name="QR Data" component={QRData} />
       </Stack.Navigator>
+      <Toast
+      position='top'
+      bottomOffset={50}
+      visibilityTime={3000}
+      />
     </NavigationContainer>
   );
 }

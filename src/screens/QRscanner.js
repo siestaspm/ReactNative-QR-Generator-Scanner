@@ -5,6 +5,7 @@ import styles from '../styles/Style';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
 import * as functions from '../utils/functions';
+import Toast from 'react-native-toast-message';
 const QRscanner = ({navigation}) => {
   const [qrValue, setQrValue] = useState('');
   const [light, setLight] = useState(false);
@@ -17,6 +18,7 @@ const QRscanner = ({navigation}) => {
           this.scanner = node;
         }}
         onRead={e => {
+          navigation.navigate('QR Data')
           functions.QR_DATA.set('QR_DATA', e.data);
         }}
         topContent={<></>}
@@ -34,7 +36,6 @@ const QRscanner = ({navigation}) => {
             }}
             onPress={() => {
               this.scanner.reactivate();
-              navigation.navigate('QR Data');
             }}
           />
         }
