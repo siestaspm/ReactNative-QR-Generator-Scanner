@@ -1,11 +1,8 @@
-/**
- * Metro configuration for React Native
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 module.exports = {
+  resolver: {
+    blacklistRE: /node_modules\/.*\/node_modules\/.*/,
+  },
+  watchFolders: [],
   transformer: {
     getTransformOptions: async () => ({
       transform: {
