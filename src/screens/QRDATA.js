@@ -17,7 +17,7 @@ function QRData() {
   const handleVerify = async () => {
     try {
       const userData = JSON.parse(functions.USER_DATA.getString('USER_DATA'));
-      const endpoint = `${API_BASE_URL}/api/raffle/VerifyAttendee`;
+      const endpoint = `${API_BASE_URL}/VerifyAttendee`;
       const inputData = {
         token: userData.token,
         attendee_code: qrValue.attendee_code,
@@ -29,6 +29,9 @@ function QRData() {
         email: qrValue.email,
       };
       const response = await axios.post(endpoint, inputData);
+      if (response.data === '') { 
+        return;
+      }
     } catch (er) {
       console.error(er);
     }

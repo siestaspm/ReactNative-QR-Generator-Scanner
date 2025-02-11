@@ -17,7 +17,7 @@ const Login = ({navigation}) => {
 
   const pressLogin = async () => {
     try {
-      const endpoint = `${API_BASE_URL}/api/raffle/VerifierLogin`;
+      const endpoint = `${API_BASE_URL}/VerifierLogin`;
       const inputData = {
         username: username,
         password: password,

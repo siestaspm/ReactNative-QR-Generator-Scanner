@@ -22,7 +22,7 @@ const Register = ({navigation}) => {
         return;
       }
 
-      const endpoint = `${API_BASE_URL}/api/raffle/RegisterVerifier`;
+      const endpoint = `${API_BASE_URL}/RegisterVerifier`;
       const inputData = {
         username: username,
         password: password,
