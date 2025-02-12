@@ -9,7 +9,7 @@ import * as functions from '../utils/functions';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 
-function QRData() {
+const QRData = ({navigation}) => {
   const [qrValue, setQrValue] = useState({});
   const [loading, setLoading] = useState(false);
   useEffect(() => {
@@ -32,24 +32,38 @@ function QRData() {
         email: qrValue.email,
       };
       const response = await axios.post(endpoint, inputData);
-      console.log(response.data);
       if (response.data === 'Unable to find attendee') {
         Toast.show({
           type: 'error',
           text1: 'Unable to find attendee!',
         });
+        setTimeout(() => {
+          navigation.navigate('QR Scanner');
+        }, 1000);
       } else if (response.data === 'Attendee is already present') {
         Toast.show({
           type: 'error',
           text1: 'Attendee is already present!',
         });
+        setTimeout(() => {
+          navigation.navigate('QR Scanner');
+        }, 1000);
       } else if (response.data === 'Success') {
-        navigation.navigate('QR Scanner');
+        Toast.show({
+          type: 'success',
+          text1: 'Successfully Validate the QR code',
+        });
+        setTimeout(() => {
+          navigation.navigate('QR Scanner');
+        }, 1000);
       } else {
         Toast.show({
           type: 'error',
           text1: `${response.data}`,
         });
+        setTimeout(() => {
+          navigation.navigate('QR Scanner');
+        }, 1000);
       }
     } catch (er) {
       console.error(er);
@@ -84,6 +98,6 @@ function QRData() {
       </TouchableOpacity>
     </View>
   );
-}
+};
 
 export default QRData;
