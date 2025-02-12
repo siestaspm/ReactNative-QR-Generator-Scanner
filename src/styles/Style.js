@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
   },
   buttonHome: {
-    backgroundColor: 'rgba(255, 193, 7, 1)',
+    backgroundColor: '#20B2AA',
     borderColor: 'transparent',
     borderWidth: 0,
     borderRadius: 30,

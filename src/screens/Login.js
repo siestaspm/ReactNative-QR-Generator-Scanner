@@ -12,21 +12,21 @@ import {
 import {API_BASE_URL} from '../utils/apiConfig';
 import * as functions from '../utils/functions';
 import Toast from 'react-native-toast-message';
-import { CommonActions } from '@react-navigation/native';
+import {CommonActions} from '@react-navigation/native';
 const Login = ({navigation}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const pressLogin = async () => {
     try {
-      if (username === '' || password === '') { 
+      if (username === '' || password === '') {
         Toast.show({
           type: 'error', // success | error | info
-          text1: 'Please enter your username or password!'
+          text1: 'Please enter your username or password!',
         });
         return;
       }
-      setLoading(true)
+      setLoading(true);
       const endpoint = `${API_BASE_URL}/VerifierLogin`;
       const inputData = {
         username: username,
@@ -42,29 +42,29 @@ const Login = ({navigation}) => {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{name: 'Home'}]
-          })
-        )
-      } else if (response.data === 'Invalid username or password') { 
-  Toast.show({
-    type: 'error',
-    text1: 'Invalid username or password!'
-  });
-      } else if (response.data === 'Account is pending') { 
-Toast.show({
-    type: 'info',
-    text1: 'Account is pending'
-  });
-      } else { 
-Toast.show({
-    type: 'error',
-    text1: 'Something went wrong. Please try again'
-  });
-}
+            routes: [{name: 'Home'}],
+          }),
+        );
+      } else if (response.data === 'Invalid username or password') {
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid username or password!',
+        });
+      } else if (response.data === 'Account is pending') {
+        Toast.show({
+          type: 'info',
+          text1: 'Account is pending',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Something went wrong. Please try again',
+        });
+      }
     } catch (er) {
       console.log(er);
-    } finally { 
-      setLoading(false)
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,11 +92,15 @@ Toast.show({
           onChangeText={text => setPassword(text)}
         />
 
-        <TouchableOpacity style={styles.button} onPress={pressLogin}>
-          {loading ? ( 
-            <ActivityIndicator size='small' color='#FFF'/>
-          ):(
-            <Text style={styles.buttonText}>Login</Text>)}
+        <TouchableOpacity
+          style={styles.button}
+          disabled={loading}
+          onPress={pressLogin}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity

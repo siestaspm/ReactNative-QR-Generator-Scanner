@@ -7,21 +7,26 @@ import {
   ImageBackground,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import {API_BASE_URL} from '../utils/apiConfig';
+import Toast from 'react-native-toast-message';
 
 const Register = ({navigation}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState(false);
-
-
+  const [loading, setLoading] = useState(false);
   const pressRegister = async () => {
-    console.log('started')
+    setLoading(true);
     try {
       if (password !== confirmPassword) {
-        setStatus(true);
+        Toast.show({
+          type: 'error',
+          text1: `Passwords don't match`,
+        });
+        setLoading(false);
         return;
       }
 
@@ -30,20 +35,27 @@ const Register = ({navigation}) => {
         username: username,
         password: password,
       };
-      console.log(endpoint)
-      console.log(inputData)
+      console.log(endpoint);
+      console.log(inputData);
 
       const response = await axios.post(endpoint, inputData);
-      if(response.data === 'Success') { 
-        console.log('Hello')
-        navigation.navigate('Login')
-      } else if ( response.data === 'Username already exists') { 
-
-      } else { 
-
+      if (response.data === 'Success') {
+        navigation.navigate('Login');
+      } else if (response.data === 'Username already exists') {
+        Toast.show({
+          type: 'error',
+          text1: 'Username already exists',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: `${response.data}`,
+        });
       }
     } catch (er) {
       console.log(er);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,8 +93,13 @@ const Register = ({navigation}) => {
 
         <TouchableOpacity
           style={styles.button}
+          disabled={loading}
           onPress={pressRegister}>
-          <Text style={styles.buttonText}>Register</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={styles.buttonText}>Register</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
