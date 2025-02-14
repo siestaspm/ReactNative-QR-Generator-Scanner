@@ -9,7 +9,6 @@ const styles = StyleSheet.create({
   },
   iconButtonHomeContainer: {marginRight: 10},
   iconButtonHome: {
-    type: 'material',
     size: 50,
     color: 'white',
   },
