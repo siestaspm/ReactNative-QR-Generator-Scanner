@@ -1,15 +1,15 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, TouchableOpacity, ActivityIndicator} from 'react-native';
-import {Button, Dialog} from '@rneui/themed';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Button, Dialog } from '@rneui/themed';
 import styles from '../styles/Style';
 import QRCodeScanner from 'react-native-qrcode-scanner';
-import {RNCamera} from 'react-native-camera';
-import {API_BASE_URL} from '../utils/apiConfig';
+import { RNCamera } from 'react-native-camera';
+import { API_BASE_URL } from '../utils/apiConfig';
 import * as functions from '../utils/functions';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 
-const QRData = ({navigation}) => {
+const QRData = ({ navigation }) => {
   const [qrValue, setQrValue] = useState({});
   const [loading, setLoading] = useState(false);
   useEffect(() => {
@@ -21,17 +21,13 @@ const QRData = ({navigation}) => {
     try {
       const userData = JSON.parse(functions.USER_DATA.getString('USER_DATA'));
       const endpoint = `${API_BASE_URL}/VerifyAttendee`;
-      const inputData = {
-        token: userData.token,
-        attendee_code: qrValue.attendee_code,
-        first_name: qrValue.first_name,
-        last_name: qrValue.last_name,
-        nickname: qrValue.nickname,
-        gender: qrValue.gender,
-        attendee_type: qrValue.attendee_type,
-        email: qrValue.email,
-      };
-      const response = await axios.post(endpoint, inputData);
+      let parameter = qrValue
+      delete parameter.type
+      parameter.token = userData.token
+      console.log("endpoint", endpoint);
+      console.log("inputData", JSON.stringify(parameter, null, 2));
+
+      const response = await axios.post(endpoint, parameter);
       if (response.data === 'Unable to find attendee') {
         Toast.show({
           type: 'error',

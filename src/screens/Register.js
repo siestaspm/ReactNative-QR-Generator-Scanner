@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,10 +9,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import {API_BASE_URL} from '../utils/apiConfig';
+import { API_BASE_URL } from '../utils/apiConfig';
 import Toast from 'react-native-toast-message';
 
-const Register = ({navigation}) => {
+const Register = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -62,7 +62,7 @@ const Register = ({navigation}) => {
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={{uri: 'https://www.bootdey.com/image/580x580/20B2AA/20B2AA'}}
+        source={{ uri: 'https://www.bootdey.com/image/580x580/20B2AA/20B2AA' }}
         style={styles.header}>
         <Text style={styles.heading}>REGISTER</Text>
       </ImageBackground>
