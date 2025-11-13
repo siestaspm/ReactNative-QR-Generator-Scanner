@@ -3,65 +3,48 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
   TextInput,
   ActivityIndicator,
   TouchableOpacity,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons'; // Import Ionicons
+import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
-import axios from 'axios';
 import {CommonActions} from '@react-navigation/native';
-import {API_BASE_URL} from '../utils/apiConfig';
-import * as functions from '../utils/functions';
+import LinearGradient from 'react-native-linear-gradient';
+import {PASSWORD, USERNAME} from '../utils/apiConfig';
 
 const Login = ({navigation}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State for password visibility
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const togglePasswordVisibility = () => {
+  const togglePasswordVisibility = () =>
     setIsPasswordVisible(!isPasswordVisible);
-  };
 
   const pressLogin = async () => {
     try {
       if (username === '' || password === '') {
         Toast.show({
           type: 'error',
-          text1: 'Please enter your username or password!',
+          text1: 'Please enter your username and password!',
         });
         return;
       }
+
       setLoading(true);
-      const endpoint = `${API_BASE_URL}/VerifierLogin`;
-      const inputData = {username, password};
-      const response = await axios.post(endpoint, inputData);
-      console.log(endpoint);
-      console.log(JSON.stringify(inputData, null, 2));
-      console.log(response.data);
-      if (response.status === 200 && typeof response.data === 'object') {
-        functions.USER_DATA.set(
-          'USER_DATA',
-          JSON.stringify(response.data, null, 2),
-        );
+      if (USERNAME === username && PASSWORD === password) {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
             routes: [{name: 'Home'}],
           }),
         );
-      } else if (response.data === 'Invalid username or password') {
-        Toast.show({type: 'error', text1: 'Invalid username or password!'});
-      } else if (response.data === 'Account is Pending') {
-        Toast.show({type: 'info', text1: 'Account is pending'});
       } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Something went wrong. Please try again',
-        });
+        Toast.show({type: 'error', text1: 'Invalid username or password!'});
       }
     } catch (er) {
       console.log(er);
@@ -71,123 +54,180 @@ const Login = ({navigation}) => {
   };
 
   return (
-    <ScrollView>
-      <View style={styles.container}>
-        <ImageBackground
-          source={{uri: 'https://www.bootdey.com/image/580x580/20B2AA/20B2AA'}}
-          style={styles.header}>
-          <Text style={styles.heading}>LOGIN</Text>
-        </ImageBackground>
-        <View style={styles.card}>
-          <TextInput
-            style={styles.input}
-            placeholder="Username"
-            placeholderTextColor="#000"
-            value={username}
-            onChangeText={setUsername}
-          />
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Password"
-              secureTextEntry={!isPasswordVisible}
-              placeholderTextColor="#000"
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity
-              onPress={togglePasswordVisibility}
-              style={styles.eyeIcon}>
+    <LinearGradient colors={['#AC895B', '#531A89']} style={styles.container}>
+      <ScrollView
+        contentContainerStyle={{flexGrow: 1}}
+        showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.innerContainer}>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Login to continue</Text>
+
+          <View style={styles.card}>
+            {/* Username */}
+            <View style={styles.inputWrapper}>
               <Icon
-                name={isPasswordVisible ? 'eye-off' : 'eye'}
+                name="person-outline"
                 size={20}
-                color="#000"
+                color="#555"
+                style={styles.icon}
               />
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                placeholderTextColor="#888"
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+              />
+            </View>
+
+            {/* Password */}
+            <View style={styles.inputWrapper}>
+              <Icon
+                name="lock-closed-outline"
+                size={20}
+                color="#555"
+                style={styles.icon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#888"
+                secureTextEntry={!isPasswordVisible}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={togglePasswordVisibility}>
+                <Icon
+                  name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#555"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Login Button */}
+            <TouchableOpacity
+              style={[styles.button, loading && {opacity: 0.7}]}
+              onPress={pressLogin}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.buttonText}>LOGIN</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.line} />
+              <Text style={styles.orText}>OR</Text>
+              <View style={styles.line} />
+            </View>
+
+            {/* Create Account */}
+            {/* () => navigation.navigate('Register') */}
+            <TouchableOpacity onPress={() => console.log('not ready')}>
+              <Text style={styles.createAccountText}>
+                Don’t have an account?{' '}
+                <Text style={styles.highlight}>Create one</Text>
+              </Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.button}
-            disabled={loading}
-            onPress={pressLogin}>
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.createAccountButton}
-            onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.createAccountButtonText}>Create Account</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+        </KeyboardAvoidingView>
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  header: {
-    alignItems: 'center',
+  innerContainer: {
+    flex: 1,
     justifyContent: 'center',
-    paddingTop: 50,
-    paddingBottom: 20,
-    width: '100%',
-    height: 200,
-  },
-  heading: {fontSize: 30, fontWeight: 'bold', color: '#fff', marginBottom: 10},
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    alignItems: 'center',
     padding: 20,
-    marginTop: 40,
-    width: '90%',
-    alignItems: 'center',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginVertical: 10,
+  title: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#E0F7F5',
+    marginBottom: 30,
+  },
+  card: {
     width: '100%',
-    color: '#000',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
   },
-  passwordContainer: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderColor: '#DDD',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    width: '100%',
-    marginVertical: 10,
-    paddingRight: 10,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginVertical: 8,
+    backgroundColor: '#FAFAFA',
   },
-  passwordInput: {flex: 1, padding: 10, color: '#000'},
-  eyeIcon: {padding: 10},
+  icon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 10,
+    color: '#000',
+  },
   button: {
-    backgroundColor: '#20B2AA',
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 10,
-    width: '100%',
+    backgroundColor: '#531A89',
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 16,
   },
-  buttonText: {color: '#fff', fontWeight: 'bold'},
-  createAccountButton: {marginTop: 20},
-  createAccountButtonText: {color: '#20B2AA', fontSize: 12, fontWeight: 'bold'},
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#DDD',
+  },
+  orText: {
+    marginHorizontal: 8,
+    color: '#777',
+    fontSize: 12,
+  },
+  createAccountText: {
+    textAlign: 'center',
+    color: '#555',
+    fontSize: 14,
+  },
+  highlight: {
+    color: '#CEAE7B',
+    fontWeight: 'bold',
+  },
 });
 
 export default Login;
