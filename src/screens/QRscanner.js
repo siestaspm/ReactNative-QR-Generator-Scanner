@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import * as functions from '../utils/functions';
-import {API_BASE_URL} from '../utils/apiConfig';
+import {API_BASE_URL, VERSION_NUMBER} from '../utils/apiConfig';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 const QRscanner = ({navigation}) => {
@@ -34,34 +34,34 @@ const QRscanner = ({navigation}) => {
   const verifyData = async data => {
     setLoading(true);
     try {
-      const qrData = JSON.parse(data);
-      if (!qrData.attendee_code) {
-        Toast.show({type: 'error', text1: 'Invalid QR Code'});
-        return;
-      }
-
-      const userData = JSON.parse(functions.USER_DATA.getString('USER_DATA'));
-      const endpoint = `${API_BASE_URL}/VerifyAttendee`;
-      let parameter = qrData;
-      delete parameter.type;
-      parameter.token = userData.token;
-
-      const response = await axios.post(endpoint, parameter);
-      if (response.data === 'Unable to find attendee') {
-        Toast.show({type: 'error', text1: 'Unable to find attendee!'});
-      } else if (response.data === 'Attendee is already present') {
-        Toast.show({type: 'error', text1: 'Attendee is already present!'});
-      } else if (response.data === 'Success') {
+      const qrcode = functions.decryptData(data);
+      const endpoint = `${API_BASE_URL}/ReadXclusiveQR`;
+      const payload = {
+        code_generated: qrcode ? qrcode : '',
+        // code_generated: 'XQR1M9',
+        version_number: VERSION_NUMBER,
+      };
+      console.log(endpoint);
+      console.log(JSON.stringify(payload, null, 2));
+      const response = await axios.post(endpoint, payload);
+      if (response?.data?.freebies) {
         Toast.show({
           type: 'success',
-          text1: 'Successfully Validated QR Code',
-          text2: `${qrData.first_name} has been validated`,
+          text1: response.data.freebies,
+          text2: `Date Claimed: ${response?.data?.date_claimed}`,
+          visibilityTime: 7000,
         });
+
+        console.log('The response contains the ticket pass!');
       } else {
-        Toast.show({type: 'error', text1: response.data});
+        Toast.show({
+          type: 'error',
+          text1: 'This QR Code is invalid',
+        });
       }
     } catch (error) {
-      Toast.show({type: 'error', text1: 'Invalid QR Code'});
+      console.log('hello');
+      console.log(error);
     } finally {
       setLoading(false);
     }

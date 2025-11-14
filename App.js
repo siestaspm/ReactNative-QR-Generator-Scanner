@@ -50,9 +50,9 @@ function App() {
       {/* Toast positioned at bottom with modern styling */}
       <Toast
         config={toastConfig}
-        position="bottom"
-        bottomOffset={70}
-        visibilityTime={2500}
+        position="top"
+        topOffset={100}
+        visibilityTime={10000}
       />
     </NavigationContainer>
   );
@@ -61,7 +61,7 @@ function App() {
 const styles = StyleSheet.create({
   successToast: {
     borderLeftColor: '#CEAE7B',
-    backgroundColor: '#E6FFFA',
+    backgroundColor: '#06eb38ff',
     borderRadius: 12,
     shadowColor: '#CEAE7B',
     shadowOffset: {width: 0, height: 4},
