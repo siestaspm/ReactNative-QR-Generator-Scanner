@@ -30,13 +30,13 @@ function Home({navigation}) {
           containerStyle={styles.buttonContainer}
         />
 
-        <Button
+        {/* <Button
           title="Log out"
           onPress={handleLogout}
           titleStyle={styles.titleButton}
           buttonStyle={styles.buttonPrimary}
           containerStyle={styles.buttonContainer}
-        />
+        /> */}
       </View>
     </LinearGradient>
   );

@@ -34,26 +34,33 @@ const QRscanner = ({navigation}) => {
   const verifyData = async data => {
     setLoading(true);
     try {
-      const qrcode = functions.decryptData(data);
       const endpoint = `${API_BASE_URL}/ReadXclusiveQR`;
       const payload = {
-        code_generated: qrcode ? qrcode : '',
+        code_generated: data ? data : '',
         // code_generated: 'XQR1M9',
         version_number: VERSION_NUMBER,
       };
       console.log(endpoint);
       console.log(JSON.stringify(payload, null, 2));
       const response = await axios.post(endpoint, payload);
+      console.log(JSON.stringify(response.data ,null, 2))
       if (response?.data?.freebies) {
         Toast.show({
           type: 'success',
           text1: response.data.freebies,
-          text2: `Date Claimed: ${response?.data?.date_claimed}`,
+          text2: `Date Claimed: ${response?.data?.date_claimed ? response?.data?.date_claimed : "Now"}`,
           visibilityTime: 7000,
         });
 
         console.log('The response contains the ticket pass!');
-      } else {
+      } else if (typeof response.data === 'object') { 
+        Toast.show({
+          type: 'success',
+          text1: response.data.text,
+          text2: `Date Claimed: ${response?.data?.date ? response?.data?.date : "Now"}`,
+          visibilityTime: 7000,
+        });
+      }else {
         Toast.show({
           type: 'error',
           text1: 'This QR Code is invalid',
