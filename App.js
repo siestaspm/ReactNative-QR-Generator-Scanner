@@ -8,6 +8,7 @@ import Login from './src/screens/Login';
 import Register from './src/screens/Register';
 import QRData from './src/screens/QRDATA';
 import Toast, {BaseToast, ErrorToast} from 'react-native-toast-message';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,29 +17,33 @@ const toastConfig = {
     <BaseToast
       {...props}
       style={styles.successToast}
-      contentContainerStyle={{paddingHorizontal: 15}}
+      contentContainerStyle={styles.toastContent}
       text1Style={styles.toastTitle}
       text2Style={styles.toastMessage}
-      text1NumberOfLines={2}
+      renderLeadingIcon={() => (
+        <Icon name="checkmark-circle" size={28} color="#2ECC71" />
+      )}
     />
   ),
+
   error: props => (
     <ErrorToast
       {...props}
       style={styles.errorToast}
-      contentContainerStyle={{paddingHorizontal: 15}}
+      contentContainerStyle={styles.toastContent}
       text1Style={styles.toastTitle}
       text2Style={styles.toastMessage}
-      text1NumberOfLines={2}
+      renderLeadingIcon={() => (
+        <Icon name="close-circle" size={28} color="#FF4D4D" />
+      )}
     />
   ),
 };
-
 function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="QR Scanner"
         screenOptions={{headerShown: false}}>
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Login" component={Login} />
@@ -60,34 +65,46 @@ function App() {
 
 const styles = StyleSheet.create({
   successToast: {
-    borderLeftColor: '#CEAE7B',
-    backgroundColor: '#06eb38ff',
-    borderRadius: 12,
-    shadowColor: '#CEAE7B',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 4,
+    backgroundColor: '#F2FFF7',
+    borderLeftWidth: 0,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    shadowColor: '#2ECC71',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
+
   errorToast: {
-    borderLeftColor: '#FF6B6B',
-    backgroundColor: '#FFECEC',
-    borderRadius: 12,
-    shadowColor: '#FF6B6B',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 4,
+    backgroundColor: '#FFF2F2',
+    borderLeftWidth: 0,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    shadowColor: '#FF4D4D',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
+
+  toastContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+
   toastTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#333',
+    color: '#111',
   },
+
   toastMessage: {
     fontSize: 13,
     color: '#555',
+    marginTop: 2,
   },
-});
+})
+
 
 export default App;

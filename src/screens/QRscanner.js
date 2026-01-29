@@ -1,187 +1,234 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {
-  View,
-  TouchableOpacity,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-} from 'react-native';
-import {Button} from '@rneui/themed';
-import QRCodeScanner from 'react-native-qrcode-scanner';
-import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
-import Toast from 'react-native-toast-message';
-import * as functions from '../utils/functions';
-import {API_BASE_URL, VERSION_NUMBER} from '../utils/apiConfig';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import React, { useRef, useState, useEffect } from "react";
+import { View, TouchableOpacity, ActivityIndicator, Text, StyleSheet } from "react-native";
+import QRCodeScanner from "react-native-qrcode-scanner";
+import Icon from "react-native-vector-icons/Ionicons";
+import Toast from "react-native-toast-message";
+import axios from "axios";
+import { check, request, PERMISSIONS, RESULTS } from "react-native-permissions";
+import { API_BASE_URL, VERSION_NUMBER } from "../utils/apiConfig";
+import { lightColors } from "../utils/colors";
+import { TextInput, Keyboard } from "react-native";
 
-const QRscanner = ({navigation}) => {
-  const [loading, setLoading] = useState(false);
+const QRscanner = () => {
   const scannerRef = useRef(null);
-
-  const requestCameraPermission = async () => {
-    const result = await check(PERMISSIONS.IOS.CAMERA);
-    if (result !== RESULTS.GRANTED) {
-      await request(PERMISSIONS.IOS.CAMERA);
-    }
-  };
+  const [loading, setLoading] = useState(false);
+  const [scannerName, setScannerName] = useState("");
+  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
-    requestCameraPermission();
+    (async () => {
+      const res = await check(PERMISSIONS.IOS.CAMERA);
+      if (res !== RESULTS.GRANTED) await request(PERMISSIONS.IOS.CAMERA);
+    })();
   }, []);
 
   const verifyData = async data => {
     setLoading(true);
     try {
       const endpoint = `${API_BASE_URL}/ReadXclusiveQR`;
-      const payload = {
-        code_generated: data ? data : '',
-        // code_generated: 'XQR1M9',
+      const parameter = {
+        code_generated: data,
+        scanned_by: scannerName,
         version_number: VERSION_NUMBER,
       };
-      console.log(endpoint);
-      console.log(JSON.stringify(payload, null, 2));
-      const response = await axios.post(endpoint, payload);
-      console.log(JSON.stringify(response.data ,null, 2))
-      if (response?.data?.freebies) {
-        Toast.show({
-          type: 'success',
-          text1: response.data.freebies,
-          text2: `Date Claimed: ${response?.data?.date_claimed ? response?.data?.date_claimed : "Now"}`,
-          visibilityTime: 7000,
-        });
+      const res = await axios.post(endpoint, parameter);
 
-        console.log('The response contains the ticket pass!');
-      } else if (typeof response.data === 'object') { 
+      if (res?.data?.freebies) {
         Toast.show({
-          type: 'success',
-          text1: response.data.text,
-          text2: `Date Claimed: ${response?.data?.date ? response?.data?.date : "Now"}`,
-          visibilityTime: 7000,
+          type: "success",
+          text1: res.data.freebies,
+          text2: res.data.date_claimed || "Just now",
         });
-      }else {
+      } else if (typeof res.data === "object") {
         Toast.show({
-          type: 'error',
-          text1: 'This QR Code is invalid',
+          type: "success",
+          text1: res.data.text,
+          text2: res.data.date || "Just now",
         });
+      } else {
+        Toast.show({ type: "error", text1: "Invalid QR Code" });
       }
-    } catch (error) {
-      console.log('hello');
-      console.log(error);
+    } catch {
+      Toast.show({ type: "error", text1: "Something went wrong" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <LinearGradient colors={['#AC895B', '#531A89']} style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}>
-        <Icon name="arrow-back" size={28} color="#FFF" />
-      </TouchableOpacity>
+    <View style={styles.container}>
+      {/* Floating Emojis */}
+      <Text style={styles.floatLeft}>🏀</Text>
+      <Text style={styles.floatRight}>⚡</Text>
 
-      {/* Centered QR Scanner */}
-      <View style={styles.centerContainer}>
-        <Text style={styles.headerText}>Scan Attendee QR Code</Text>
+      {/* <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Icon name="arrow-back" size={22} color="#111" />
+      </TouchableOpacity> */}
 
-        <QRCodeScanner
-          ref={scannerRef}
-          onRead={e => verifyData(e.data)}
-          reactivateTimeout={2000}
-          showMarker
-          cameraStyle={styles.cameraContainer}
-          customMarker={
-            <View style={styles.markerContainer}>
-              <View style={styles.markerBorder} />
-            </View>
-          }
-          // topViewStyle={{flex: 0}}
-          // bottomViewStyle={{flex: 0}}
+      <Text style={styles.title}>Scan QR</Text>
+      <Text style={styles.subtitle}>Point your camera at the code</Text>
+
+      <View style={styles.inputWrapper}>
+        <TextInput
+          placeholder="Enter scanner name..."
+          value={scannerName}
+          editable={!isLocked}
+          onChangeText={setScannerName}
+          onSubmitEditing={() => {
+            if (!scannerName.trim()) return;
+            setIsLocked(true);
+            Keyboard.dismiss();
+          }}
+          returnKeyType="done"
+          style={[styles.input, isLocked && styles.inputLocked]}
         />
 
-        {/* Scan Again Button */}
-        <Button
-          disabled={loading}
-          title={
-            loading ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              'Scan Again'
-            )
-          }
-          titleStyle={styles.buttonTitle}
-          buttonStyle={styles.buttonStyle}
-          onPress={() => scannerRef.current?.reactivate()}
-        />
+        {isLocked && <Text style={styles.lockedText}>🔒 Scanner Locked</Text>}
       </View>
-    </LinearGradient>
+
+      <View style={{ flex: 1, top: 100 }}>
+        <View style={styles.card}>
+          <QRCodeScanner
+            ref={scannerRef}
+            onRead={e => {
+              if (!isLocked) {
+                Toast.show({
+                  type: "error",
+                  text1: "Enter scanner name first",
+                });
+                return;
+              }
+              verifyData(e.data);
+            }}
+            reactivateTimeout={2000}
+            cameraStyle={styles.camera}
+            showMarker
+            customMarker={<View style={styles.marker} />}
+          />
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={() => scannerRef.current?.reactivate()} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Scan Again 🚀</Text>}
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    zIndex: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: 8,
-    borderRadius: 12,
-  },
-  centerContainer: {
+  container: {
     flex: 1,
-    paddingHorizontal: 20,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    paddingTop: 70,
   },
-  headerText: {
-    fontSize: 20,
-    color: '#FFF',
-    fontWeight: '600',
-    marginTop: 150,
-    textAlign: 'center',
+
+  backBtn: {
+    position: "absolute",
+    top: 55,
+    left: 20,
   },
-  cameraContainer: {
-    width: 300,
-    height: 300,
-    borderRadius: 20,
-    left: 25,
-    overflow: 'hidden',
+
+  title: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#111",
   },
-  markerContainer: {
+
+  subtitle: {
+    marginTop: 6,
+    marginBottom: 30,
+    color: "#888",
+  },
+
+  card: {
+    width: 320,
+    height: 320,
+    borderRadius: 24,
+    backgroundColor: "#fff",
+    shadowColor: "#531A89",
+    shadowOpacity: 0.2,
+    shadowRadius: 25,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  camera: {
+    width: 280,
+    height: 280,
+    left: 55,
+    borderRadius: 18,
+  },
+
+  marker: {
     width: 250,
     height: 250,
+    borderRadius: 18,
     borderWidth: 2,
-    borderColor: '#FFF',
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: lightColors.BrandColor,
   },
-  markerBorder: {
-    flex: 1,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#FFF',
-    width: '100%',
-    height: '100%',
+
+  button: {
+    marginTop: 40,
+    backgroundColor: lightColors.BrandColor,
+    paddingVertical: 14,
+    paddingHorizontal: 70,
+    borderRadius: 40,
+    shadowColor: lightColors.BrandColor,
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
   },
-  buttonContainer: {
-    width: 200,
-    marginTop: 30, // keeps button above bottom
+
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
-  buttonStyle: {
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    height: 50,
-    marginBottom: 70,
+
+  floatLeft: {
+    position: "absolute",
+    left: 25,
+    top: 240,
+    fontSize: 26,
+    opacity: 0.25,
   },
-  buttonTitle: {
-    color: '#531A89',
-    fontSize: 18,
-    fontWeight: 'bold',
+
+  floatRight: {
+    position: "absolute",
+    right: 30,
+    top: 220,
+    fontSize: 26,
+    opacity: 0.25,
   },
+  inputWrapper: {
+  width: '85%',
+  marginBottom: 20,
+},
+
+input: {
+  borderWidth: 1,
+  borderColor: '#ddd',
+  borderRadius: 12,
+  paddingVertical: 12,
+  paddingHorizontal: 16,
+  fontSize: 16,
+  backgroundColor: '#fff',
+},
+
+inputLocked: {
+  backgroundColor: '#f1f1f1',
+  color: '#666',
+},
+
+lockedText: {
+  marginTop: 6,
+  fontSize: 12,
+  color: '#4CAF50',
+  fontWeight: '600',
+},
+
 });
 
 export default QRscanner;

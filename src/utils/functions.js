@@ -1,7 +1,7 @@
-import {MMKV} from 'react-native-mmkv';
+// import {MMKV} from 'react-native-mmkv';
 import CryptoJS from 'crypto-js';
-export const QR_DATA = new MMKV();
-export const USER_DATA = new MMKV();
+export const QR_DATA = 'new MMKV()';
+export const USER_DATA = 'new MMKV()';
 export const ENCRYPTION_PASSCODE = '@D4t4dyn4m1xIT';
 
 export const decryptData = async data => {
