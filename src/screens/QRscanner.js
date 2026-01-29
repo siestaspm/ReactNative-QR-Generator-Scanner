@@ -203,7 +203,7 @@ const QRscanner = () => {
       {/* Trainer/Scanner Name Input */}
       <View style={[styles.inputWrapper, { width: SCREEN_WIDTH * 0.85 }]}>
         <TextInput
-          placeholder="Enter your trainer name..."
+          placeholder="Enter your scanner name..."
           placeholderTextColor="#888"
           value={scannerName}
           editable={!isLocked}
