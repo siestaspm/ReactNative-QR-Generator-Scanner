@@ -30,8 +30,10 @@ const QRscanner = () => {
   const [scannerName, setScannerName] = useState("");
   const [isLocked, setIsLocked] = useState(false);
   const [qrData, setQrData] = useState('');
+  const [reactivate, setReactivate] = useState(false)
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bounceAnim = useRef(new Animated.Value(1)).current;
+
 
   const canScan = isLocked && scannerName.trim().length > 0;
 
@@ -129,14 +131,26 @@ const QRscanner = () => {
           text2: res.data.date || "Just now",
         });
       } else if (typeof res.data === "object" && confirmed === true) { 
+        setReactivate(false)
         setQrData('');
-        scannerRef.current?.reactivate();
         Toast.show({
           type: "success",
           text1: res.data.text,
           text2: res.data.date || "Just now",
         });
+        setTimeout(() => { 
+          scannerRef.current?.reactivate();
+        }, 3000)
+      } else if(res.data === 'Error: QR is already used') { 
+        setQrData('');
+        Toast.show({ 
+          type: "error", 
+          text1: "🚫 Foul!",
+          text2: "QR Already used"
+        });
+          scannerRef.current?.reactivate();
       }else {
+
         Toast.show({ 
           type: "error", 
           text1: "🚫 Foul!",
@@ -146,7 +160,7 @@ const QRscanner = () => {
     } catch {
       Toast.show({ 
         type: "error", 
-        text1: "⛔ Technical Foul!",
+        text1: "⛔ Oppss!",
         text2: "Something went wrong" 
       });
     } finally {
@@ -258,14 +272,21 @@ const QRscanner = () => {
             }
           ]}
         >
-          {canScan ? (
+          {canScan && !qrData ? (
           <QRCodeScanner
             ref={scannerRef}
-            onRead={
-              canScan && !loading
-                ? e => verifyData(e.data, false)
-                : undefined
-            }
+            reactivate={reactivate}
+            onRead={e => {
+              if (!canScan || loading) return;
+
+              setQrData(e.data);
+              setReactivate(false);
+
+              setTimeout(() => { 
+                              verifyData(e.data, false); // 👈 correct place
+
+              }, 3000)
+            }}
             cameraStyle={[styles.camera, { width: cameraSize, height: cameraSize, left: SCREEN_WIDTH * 0.14, top: SCREEN_HEIGHT * 0.02 }]}
             showMarker={canScan}
             customMarker={canScan ? (
@@ -276,13 +297,14 @@ const QRscanner = () => {
           ) : (
             <View style={[styles.overlay, { width: cameraSize, height: cameraSize }]}>
               <Text style={styles.overlayText}>
-                 Enter name to start scanning
+                {qrData
+                ? "Verify QR before scanning another"
+                : "Enter name to start scanning"}
               </Text>
             </View>
           )}
         </Animated.View>
 
-        {canScan && qrData && (
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <TouchableOpacity
             style={[
@@ -305,9 +327,7 @@ const QRscanner = () => {
             )}
           </TouchableOpacity>
         </Animated.View>
-          )}
-
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+             <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <TouchableOpacity
             style={[
               styles.button,
@@ -317,18 +337,26 @@ const QRscanner = () => {
               }
             ]}
             disabled={loading || !canScan}
-            onPress={() => scannerRef.current?.reactivate()}
+            onPress={() => {
+              if (!canScan) return;
+
+              setQrData("");            // clear old QR
+              setReactivate(true);      // enable scanner
+            }}
+
+            // onPress={() => scannerRef.current?.reactivate()}
             // onPress={() => functions.storage.delete('scanner_name')}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={[styles.buttonText, { fontSize: fontSize.button }]}>
-                {canScan ? "Scan Again 🚀" : "Enter Name First 🔒"}
+                {canScan && !qrData ? "Scan 🚀" : "Scan again"}
               </Text>
             )}
           </TouchableOpacity>
         </Animated.View>
+       
       </View>
 
       {/* NBA Scoreboard-style Footer */}
