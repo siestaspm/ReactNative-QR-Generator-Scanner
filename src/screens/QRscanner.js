@@ -106,13 +106,15 @@ const QRscanner = () => {
     ]).start();
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/ReadXclusiveQR`, {
+      const inputData = {
         code_generated: data,
         scanned_by: scannerName,
         confirmed: confirmed,
         version_number: VERSION_NUMBER,
-      });
+      }
+      const res = await axios.post(`${API_BASE_URL}/ReadXclusiveQR`, inputData);
 
+      console.log(JSON.stringify(inputData, null, 2))
       console.log(JSON.stringify(res.data,null,2))
       if (res?.data?.freebies) {
         Toast.show({
@@ -280,7 +282,7 @@ const QRscanner = () => {
           )}
         </Animated.View>
 
-        {canScan && (
+        {canScan && qrData && (
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <TouchableOpacity
             style={[
