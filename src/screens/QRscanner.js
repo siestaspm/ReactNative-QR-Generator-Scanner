@@ -29,6 +29,7 @@ const QRscanner = () => {
   const [loading, setLoading] = useState(false);
   const [scannerName, setScannerName] = useState("");
   const [isLocked, setIsLocked] = useState(false);
+  const [qrData, setQrData] = useState('');
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bounceAnim = useRef(new Animated.Value(1)).current;
 
@@ -73,10 +74,22 @@ const QRscanner = () => {
     }
   }, [canScan, bounceAnim]);
 
-  const verifyData = async data => {
-    if (!canScan) return;
-
+  const verifyData = async (data, confirmed) => {
+    
+  if (!canScan || loading) return;
+      if (!data || data.trim() === "") {
+      Toast.show({
+        type: "error",
+        text1: "No QR scanned",
+        text2: "Scan a QR code first",
+      });
+      return;
+    }
+    setQrData(data);
     setLoading(true);
+
+    
+
     
     // Button press animation
     Animated.sequence([
@@ -96,6 +109,7 @@ const QRscanner = () => {
       const res = await axios.post(`${API_BASE_URL}/ReadXclusiveQR`, {
         code_generated: data,
         scanned_by: scannerName,
+        confirmed: confirmed,
         version_number: VERSION_NUMBER,
       });
 
@@ -106,13 +120,21 @@ const QRscanner = () => {
           text1: res.data.freebies,
           text2: res.data.date_claimed || "Just now",
         });
-      } else if (typeof res.data === "object") {
+      } else if (typeof res.data === "object" && confirmed === false) {
         Toast.show({
           type: "success",
           text1: res.data.text,
           text2: res.data.date || "Just now",
         });
-      } else {
+      } else if (typeof res.data === "object" && confirmed === true) { 
+        setQrData('');
+        scannerRef.current?.reactivate();
+        Toast.show({
+          type: "success",
+          text1: res.data.text,
+          text2: res.data.date || "Just now",
+        });
+      }else {
         Toast.show({ 
           type: "error", 
           text1: "🚫 Foul!",
@@ -155,7 +177,7 @@ const QRscanner = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFDE00" />
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       
       {/* NBA x Pokémon Themed Background Elements */}
       <Text style={[styles.floatLeft, { fontSize: isSmallDevice ? 22 : isTablet ? 36 : 26 }]}>
@@ -237,9 +259,11 @@ const QRscanner = () => {
           {canScan ? (
           <QRCodeScanner
             ref={scannerRef}
-            onRead={canScan ? e => verifyData(e.data) : undefined}
-            reactivate={canScan}
-            reactivateTimeout={2000}
+            onRead={
+              canScan && !loading
+                ? e => verifyData(e.data, false)
+                : undefined
+            }
             cameraStyle={[styles.camera, { width: cameraSize, height: cameraSize, left: SCREEN_WIDTH * 0.14, top: SCREEN_HEIGHT * 0.02 }]}
             showMarker={canScan}
             customMarker={canScan ? (
@@ -256,12 +280,37 @@ const QRscanner = () => {
           )}
         </Animated.View>
 
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        {canScan && (
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <TouchableOpacity
             style={[
               styles.button,
               { 
                 marginTop: isSmallDevice ? 30 : isTablet ? 60 : 40,
+                paddingHorizontal: isSmallDevice ? 50 : isTablet ? 80 : 70
+              }
+            ]}
+            disabled={loading || !canScan}
+            onPress={() => verifyData(qrData, true)}
+            // onPress={() => functions.storage.delete('scanner_name')}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={[styles.buttonText, { fontSize: fontSize.button }]}>
+                Mark as used
+              </Text>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+          )}
+
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { 
+                marginTop: isSmallDevice ? 20 : isTablet ? 50 : 30,
                 paddingHorizontal: isSmallDevice ? 50 : isTablet ? 80 : 70
               }
             ]}
@@ -281,11 +330,11 @@ const QRscanner = () => {
       </View>
 
       {/* NBA Scoreboard-style Footer */}
-      <View style={styles.footer}>
+      {/* <View style={styles.footer}>
         <Text style={styles.footerText}>
           🏀 XURE x PICCC • Version 1.0.0 ⚡
         </Text>
-      </View>
+      </View> */}
     </View>
   );
 };
