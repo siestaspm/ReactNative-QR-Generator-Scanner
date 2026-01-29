@@ -1,38 +1,105 @@
-import React, { useRef, useState, useEffect } from "react";
-import { View, TouchableOpacity, ActivityIndicator, Text, StyleSheet } from "react-native";
+import React, { useRef, useState, useEffect, useMemo } from "react";
+import {
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+  Text,
+  StyleSheet,
+  TextInput,
+  Keyboard,
+  Dimensions,
+  Animated,
+  Platform,
+  StatusBar,
+} from "react-native";
 import QRCodeScanner from "react-native-qrcode-scanner";
-import Icon from "react-native-vector-icons/Ionicons";
 import Toast from "react-native-toast-message";
 import axios from "axios";
 import { check, request, PERMISSIONS, RESULTS } from "react-native-permissions";
 import { API_BASE_URL, VERSION_NUMBER } from "../utils/apiConfig";
 import { lightColors } from "../utils/colors";
-import { TextInput, Keyboard } from "react-native";
+import * as functions from "../utils/functions";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const isSmallDevice = SCREEN_WIDTH < 375;
+const isTablet = SCREEN_WIDTH > 768;
 
 const QRscanner = () => {
   const scannerRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [scannerName, setScannerName] = useState("");
   const [isLocked, setIsLocked] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const bounceAnim = useRef(new Animated.Value(1)).current;
+
+  const canScan = isLocked && scannerName.trim().length > 0;
 
   useEffect(() => {
     (async () => {
-      const res = await check(PERMISSIONS.IOS.CAMERA);
-      if (res !== RESULTS.GRANTED) await request(PERMISSIONS.IOS.CAMERA);
+      const cameraPermission = Platform.select({
+        ios: PERMISSIONS.IOS.CAMERA,
+        android: PERMISSIONS.ANDROID.CAMERA,
+      });
+      const res = await check(cameraPermission);
+      if (res !== RESULTS.GRANTED) await request(cameraPermission);
     })();
   }, []);
 
+  useEffect(() => {
+    const savedName = functions.storage.getString("scanner_name");
+    if (savedName) {
+      setScannerName(savedName);
+      setIsLocked(true);
+    }
+  }, []);
+
+  // Add pulsing animation for scanner
+  useEffect(() => {
+    if (canScan) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, {
+            toValue: 1.05,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(bounceAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [canScan, bounceAnim]);
+
   const verifyData = async data => {
+    if (!canScan) return;
+
     setLoading(true);
+    
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     try {
-      const endpoint = `${API_BASE_URL}/ReadXclusiveQR`;
-      const parameter = {
+      const res = await axios.post(`${API_BASE_URL}/ReadXclusiveQR`, {
         code_generated: data,
         scanned_by: scannerName,
         version_number: VERSION_NUMBER,
-      };
-      const res = await axios.post(endpoint, parameter);
+      });
 
+      console.log(JSON.stringify(res.data,null,2))
       if (res?.data?.freebies) {
         Toast.show({
           type: "success",
@@ -46,70 +113,178 @@ const QRscanner = () => {
           text2: res.data.date || "Just now",
         });
       } else {
-        Toast.show({ type: "error", text1: "Invalid QR Code" });
+        Toast.show({ 
+          type: "error", 
+          text1: "🚫 Foul!",
+          text2: "Invalid QR Code"
+        });
       }
     } catch {
-      Toast.show({ type: "error", text1: "Something went wrong" });
+      Toast.show({ 
+        type: "error", 
+        text1: "⛔ Technical Foul!",
+        text2: "Something went wrong" 
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const fontSize = useMemo(() => ({
+    title: isSmallDevice ? 22 : isTablet ? 32 : 26,
+    subtitle: isSmallDevice ? 14 : isTablet ? 20 : 16,
+    button: isSmallDevice ? 14 : isTablet ? 20 : 16,
+    input: isSmallDevice ? 14 : isTablet ? 18 : 16,
+  }), [isSmallDevice, isTablet]);
+
+  const containerPadding = useMemo(() => 
+    isSmallDevice ? 50 : isTablet ? 100 : 70
+  , [isSmallDevice, isTablet]);
+
+  const scannerSize = useMemo(() => 
+    isSmallDevice ? 280 : isTablet ? 400 : 320
+  , [isSmallDevice, isTablet]);
+
+  const markerSize = useMemo(() => 
+    isSmallDevice ? 230 : isTablet ? 350 : 250
+  , [isSmallDevice, isTablet]);
+
+  const cameraSize = useMemo(() => 
+    isSmallDevice ? 240 : isTablet ? 360 : 280
+  , [isSmallDevice, isTablet]);
+
   return (
     <View style={styles.container}>
-      {/* Floating Emojis */}
-      <Text style={styles.floatLeft}>🏀</Text>
-      <Text style={styles.floatRight}>⚡</Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFDE00" />
+      
+      {/* NBA x Pokémon Themed Background Elements */}
+      <Text style={[styles.floatLeft, { fontSize: isSmallDevice ? 22 : isTablet ? 36 : 26 }]}>
+        🏀
+      </Text>
+      <Text style={[styles.floatRight, { fontSize: isSmallDevice ? 22 : isTablet ? 36 : 26 }]}>
+        ⚡
+      </Text>
+      
+      {/* Pokémon-style Floating Elements */}
+      <Animated.Text 
+        style={[
+          styles.pokeball, 
+          { 
+            left: SCREEN_WIDTH * 0.1,
+            fontSize: isSmallDevice ? 24 : isTablet ? 40 : 30,
+          }
+        ]}
+      >
+        ⚾
+      </Animated.Text>
+      
+      <Animated.Text 
+        style={[
+          styles.nbaBall,
+          { 
+            right: SCREEN_WIDTH * 0.1,
+            fontSize: isSmallDevice ? 20 : isTablet ? 36 : 28,
+          }
+        ]}
+      >
+        🏐
+      </Animated.Text>
 
-      {/* <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Icon name="arrow-back" size={22} color="#111" />
-      </TouchableOpacity> */}
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: containerPadding }]}>
+        <Text style={[styles.title, { fontSize: fontSize.title }]}>
+           XURE QR Scanner 
+        </Text>
+        <Text style={[styles.subtitle, { fontSize: fontSize.subtitle }]}>
+          Point your QR at the camera!
+        </Text>
+      </View>
 
-      <Text style={styles.title}>Scan QR</Text>
-      <Text style={styles.subtitle}>Point your camera at the code</Text>
-
-      <View style={styles.inputWrapper}>
+      {/* Trainer/Scanner Name Input */}
+      <View style={[styles.inputWrapper, { width: SCREEN_WIDTH * 0.85 }]}>
         <TextInput
-          placeholder="Enter scanner name..."
+          placeholder="Enter your trainer name..."
+          placeholderTextColor="#888"
           value={scannerName}
           editable={!isLocked}
           onChangeText={setScannerName}
           onSubmitEditing={() => {
             if (!scannerName.trim()) return;
             setIsLocked(true);
+            functions.storage.set("scanner_name", scannerName);
             Keyboard.dismiss();
           }}
-          returnKeyType="done"
-          style={[styles.input, isLocked && styles.inputLocked]}
+          style={[
+            styles.input, 
+            isLocked && styles.inputLocked,
+            { fontSize: fontSize.input }
+          ]}
         />
 
-        {isLocked && <Text style={styles.lockedText}>🔒 Scanner Locked</Text>}
       </View>
 
-      <View style={{ flex: 1, top: 100 }}>
-        <View style={styles.card}>
+      {/* Scanner Area */}
+      <View style={[styles.scannerContainer, { top: isSmallDevice ? 40 : isTablet ? 10 : 80 }]}>
+        <Animated.View 
+          style={[
+            styles.card, 
+            { 
+              width: scannerSize, 
+              height: scannerSize,
+            }
+          ]}
+        >
+          {canScan ? (
           <QRCodeScanner
             ref={scannerRef}
-            onRead={e => {
-              if (!isLocked) {
-                Toast.show({
-                  type: "error",
-                  text1: "Enter scanner name first",
-                });
-                return;
-              }
-              verifyData(e.data);
-            }}
+            onRead={canScan ? e => verifyData(e.data) : undefined}
+            reactivate={canScan}
             reactivateTimeout={2000}
-            cameraStyle={styles.camera}
-            showMarker
-            customMarker={<View style={styles.marker} />}
+            cameraStyle={[styles.camera, { width: cameraSize, height: cameraSize, left: SCREEN_WIDTH * 0.14, top: SCREEN_HEIGHT * 0.02 }]}
+            showMarker={canScan}
+            customMarker={canScan ? (
+              <Animated.View style={[styles.marker, { width: markerSize, height: markerSize }]}>
+              </Animated.View>
+            ) : null}
           />
-        </View>
+          ) : (
+            <View style={[styles.overlay, { width: cameraSize, height: cameraSize }]}>
+              <Text style={styles.overlayText}>
+                 Enter name to start scanning
+              </Text>
+            </View>
+          )}
+        </Animated.View>
 
-        <TouchableOpacity style={styles.button} onPress={() => scannerRef.current?.reactivate()} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Scan Again 🚀</Text>}
-        </TouchableOpacity>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { 
+                marginTop: isSmallDevice ? 30 : isTablet ? 60 : 40,
+                paddingHorizontal: isSmallDevice ? 50 : isTablet ? 80 : 70
+              }
+            ]}
+            disabled={loading || !canScan}
+            onPress={() => scannerRef.current?.reactivate()}
+            // onPress={() => functions.storage.delete('scanner_name')}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={[styles.buttonText, { fontSize: fontSize.button }]}>
+                {canScan ? "Scan Again 🚀" : "Enter Name First 🔒"}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+
+      {/* NBA Scoreboard-style Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          🏀 XURE x PICCC • Version 1.0.0 ⚡
+        </Text>
       </View>
     </View>
   );
@@ -118,117 +293,217 @@ const QRscanner = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: "#ffffff", // Pokémon yellow
     alignItems: "center",
-    paddingTop: 70,
   },
-
-  backBtn: {
-    position: "absolute",
-    top: 55,
-    left: 20,
+  header: {
+    alignItems: "center",
+    width: "100%",
   },
-
   title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#111",
+    fontWeight: "900",
+    color: "#003A70", // NBA blue
+    textShadowColor: "#FF0000", // Pokémon red
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 1,
   },
-
   subtitle: {
     marginTop: 6,
     marginBottom: 30,
-    color: "#888",
+    color: "#003A70",
+    fontWeight: "600",
+    textAlign: "center",
   },
-
+  scannerContainer: {
+    alignItems: "center",
+    flex: 1,
+  },
   card: {
-    width: 320,
-    height: 320,
     borderRadius: 24,
     backgroundColor: "#fff",
-    shadowColor: "#531A89",
-    shadowOpacity: 0.2,
-    shadowRadius: 25,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    borderWidth: 3,
+    borderColor: "#003A70",
+  },
+  camera: {
+    borderRadius: 18,
+    overflow: "hidden", 
+  },
+  marker: {
+    borderRadius: 18,
+    borderWidth: 4,
+    borderColor: "#FF0000",
     justifyContent: "center",
     alignItems: "center",
   },
-
-  camera: {
-    width: 280,
-    height: 280,
-    left: 55,
+  cornerTL: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 30,
+    height: 30,
+    borderLeftWidth: 5,
+    borderTopWidth: 5,
+    borderColor: "#FFDE00",
+  },
+  cornerTR: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRightWidth: 5,
+    borderTopWidth: 5,
+    borderColor: "#FFDE00",
+  },
+  cornerBL: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    width: 30,
+    height: 30,
+    borderLeftWidth: 5,
+    borderBottomWidth: 5,
+    borderColor: "#FFDE00",
+  },
+  cornerBR: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderColor: "#FFDE00",
+  },
+  scanningText: {
+    color: "#FFDE00",
+    fontSize: 16,
+    fontWeight: "800",
+    backgroundColor: "rgba(0, 58, 112, 0.8)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  overlay: {
+    position: "absolute",
+    backgroundColor: "rgba(0, 58, 112, 0.85)", // NBA blue overlay
     borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
   },
-
-  marker: {
-    width: 250,
-    height: 250,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: lightColors.BrandColor,
-  },
-
-  button: {
-    marginTop: 40,
-    backgroundColor: lightColors.BrandColor,
-    paddingVertical: 14,
-    paddingHorizontal: 70,
-    borderRadius: 40,
-    shadowColor: lightColors.BrandColor,
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-  },
-
-  buttonText: {
-    color: "#fff",
+  overlayText: {
+    color: "#FFDE00",
     fontSize: 16,
     fontWeight: "700",
-  },
-
-  floatLeft: {
-    position: "absolute",
-    left: 25,
-    top: 240,
-    fontSize: 26,
-    opacity: 0.25,
-  },
-
-  floatRight: {
-    position: "absolute",
-    right: 30,
-    top: 220,
-    fontSize: 26,
-    opacity: 0.25,
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
   inputWrapper: {
-  width: '85%',
-  marginBottom: 20,
-},
-
-input: {
-  borderWidth: 1,
-  borderColor: '#ddd',
-  borderRadius: 12,
-  paddingVertical: 12,
-  paddingHorizontal: 16,
-  fontSize: 16,
-  backgroundColor: '#fff',
-},
-
-inputLocked: {
-  backgroundColor: '#f1f1f1',
-  color: '#666',
-},
-
-lockedText: {
-  marginTop: 6,
-  fontSize: 12,
-  color: '#4CAF50',
-  fontWeight: '600',
-},
-
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 3,
+    borderColor: "#003A70",
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    backgroundColor: "white",
+    color: "#003A70",
+    fontWeight: "600",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  inputLocked: {
+    backgroundColor: "#f0f8ff",
+    color: "#003A70",
+  },
+  lockedContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+    paddingHorizontal: 5,
+  },
+  lockedText: {
+    fontSize: 14,
+    color: "#4CAF50",
+    fontWeight: "700",
+  },
+  unlockButton: {
+    backgroundColor: "#FF0000",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  unlockText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  button: {
+    backgroundColor: "#003A70", // NBA blue
+    paddingVertical: 16,
+    borderRadius: 40,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  buttonText: {
+    color: "#FFDE00", // Pokémon yellow
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  floatLeft: {
+    position: "absolute",
+    left: 20,
+    top: 100,
+    opacity: 0.3,
+  },
+  floatRight: {
+    position: "absolute",
+    right: 20,
+    top: 80,
+    opacity: 0.3,
+  },
+  pokeball: {
+    position: "absolute",
+    top: 180,
+    opacity: 0.2,
+    transform: [{ rotate: "15deg" }],
+  },
+  nbaBall: {
+    position: "absolute",
+    top: 150,
+    opacity: 0.2,
+    transform: [{ rotate: "-15deg" }],
+  },
+  footer: {
+    position: "absolute",
+    bottom: Platform.OS === 'ios' ? 30 : 20,
+    width: "100%",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  footerText: {
+    fontSize: 12,
+    color: "#003A70",
+    fontWeight: "600",
+    textAlign: "center",
+    opacity: 0.8,
+  },
 });
 
 export default QRscanner;
